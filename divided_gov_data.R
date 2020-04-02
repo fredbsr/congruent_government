@@ -199,22 +199,27 @@ wri
 
 # PLaying with plots ----
 ggplot() +
-#  stat_smooth() +
-  geom_text(data = df %>% 
+  geom_text_repel(data = df %>% 
               filter(!is.na(div.gov),ifs!="bra",totparties>2) %>%
-              mutate(allhouse = case_when(
+              mutate(
+              allhouse = case_when(
                 allhouse == 1 ~ "Majority government",
-                TRUE ~ "Minority government"
-              )), #%>%
-              # ungroup() %>%
-              # #dplyr::select(-year) %>%
-              # add_count(ifs,coal.ideo,pres.ideo) %>% 
-              # filter(n>1)
+                TRUE ~ "Minority government"),
+              div.gov.cat = case_when(
+                abs(div.gov) <= 2 ~ "Congruent",
+                abs(div.gov) > 2 ~ "Incongruent")
+              ), 
             
-            aes(x=year,y=abs(div.gov),label=paste0(ifs,str_sub(year,-2)),colour=country),
-            family = "Times New Roman") +
+            aes(x=year,y=abs(div.gov),
+                label=paste0(ifs,str_sub(year,-2)),
+                colour=paste(allhouse,div.gov.cat)),
+          #  family = "Times New Roman") +
+          family = "Arial",size=3,
+          fontface = "bold",#position=position_jitter(width=0.5,height=0.5),
+          segment.alpha=0.3) +
   
-  theme_bw(base_family = "Times", base_size = 11) +
+#  theme_bw(base_family = "Times", base_size = 11) +
+  theme_bw(base_family = "Arial", base_size = 11) +
   theme(legend.background = element_blank(),
         legend.key = element_blank(),
         panel.background = element_blank(),
@@ -232,9 +237,191 @@ ggplot() +
   annotate("rect", ymin = 0, ymax = 2,xmin=-Inf,xmax=Inf,alpha = .2) +
   labs(y="Ideological distances",x="",title="")
   
+ggplot(data = df %>% 
+         filter(!is.na(div.gov),ifs!="bra",totparties>2) %>%
+         mutate(
+           allhouse = case_when(
+             allhouse == 1 ~ "Majority government",
+             TRUE ~ "Minority government"),
+           div.gov.cat = case_when(
+             abs(div.gov) <= 1 ~ "Congruent",
+             abs(div.gov) > 1 ~ "Incongruent"),
+           status = case_when(
+             (allhouse == "Majority government" &  div.gov.cat== "Incongruent") | 
+               (allhouse == "Minority government" &  div.gov.cat=="Congruent" ) ~ "Mismatch",
+             (allhouse == "Majority government" &  div.gov.cat== "Congruent") | 
+               (allhouse == "Minority government" &  div.gov.cat=="Incongruent" ) ~ "Match")
+         )
+       ) +
+  geom_rect(fill="grey25",
+            xmin=0.5,xmax=1.5,
+            ymin=1.5,ymax=2.5,
+            alpha = .005) +
+  geom_rect(fill="grey25",
+            xmin=1.5,xmax=2.5,
+            ymin=.5,ymax=1.5,
+            alpha = .005) +
+  geom_text_repel(aes(x=allhouse,y=div.gov.cat,
+                label=paste0(ifs,str_sub(year,-2)),
+                colour=paste(allhouse,div.gov.cat,sep = "\n + ")),
+#            family = "Times New Roman",segment.alpha=0) +
+            family = "Arial",segment.alpha=0,size=3,fontface = "bold") +
+ # scale_fill_manual(values = c("white","grey50","white","grey50")) +
+  geom_hline(yintercept = 1.5) +
+  geom_vline(xintercept = 1.5) +
+#  theme_bw(base_family = "Times", base_size = 11) +
+  theme_bw(base_family = "Arial", base_size = 11) +
+  theme(legend.background = element_blank(),
+        legend.key = element_blank(),
+        panel.background = element_blank(),
+     #   panel.border = element_blank(),
+        strip.background = element_rect(fill="white"),
+        plot.background = element_blank(),
+        axis.line = element_blank(),
+        panel.grid.major.x = element_line(size = 0.4),
+        panel.grid.major.y = element_line(size = 0.4),
+        panel.grid.minor = element_blank(),
+     panel.border = element_blank(),
+        legend.position="none",
+        legend.title=element_blank(),
+     axis.text.y = element_text(angle=90,vjust = 0.5,hjust = 0.5),
+        axis.ticks = element_blank())+
+  
+  labs(y="Congruent or incongruent",x="Majority or Minority",title="")
 
 
-# Loading data GARBAGE ---
+# using facets
+ggplot(data = df %>% 
+         filter(!is.na(div.gov),ifs!="bra",totparties>2) %>%
+         mutate(
+           allhouse = case_when(
+             allhouse == 1 ~ "Majority government",
+             TRUE ~ "Minority government"),
+           div.gov.cat = case_when(
+             abs(div.gov) <= 1 ~ "Congruent",
+             abs(div.gov) > 1 ~ "Incongruent"),
+           status = case_when(
+             (allhouse == "Majority government" &  div.gov.cat== "Incongruent") | 
+               (allhouse == "Minority government" &  div.gov.cat=="Congruent" ) ~ "Mismatch",
+             (allhouse == "Majority government" &  div.gov.cat== "Congruent") | 
+               (allhouse == "Minority government" &  div.gov.cat=="Incongruent" ) ~ "Match")
+         )
+) +
+  geom_rect(aes(fill=status),
+            xmin=-Inf,xmax=Inf,
+            ymin=-Inf,ymax=Inf,
+            alpha = .005) +
+  geom_text_repel(aes(x=year,y=rev(ifs),
+                      label=paste0(ifs,str_sub(year,-2)),
+                      colour=paste(allhouse,div.gov.cat,sep = "\n + ")),
+ 
+                  family = "Arial",segment.alpha=0,size=3,fontface = "bold") +
+  scale_fill_manual(values = c("white","grey50","white","grey50")) +
+  scale_color_manual(values = c("black","grey50","grey50","black")) +
+  theme_minimal(base_family = "Arial", base_size = 11) +
+  theme(legend.background = element_blank(),
+        legend.key = element_blank(),
+        panel.background = element_rect(fill="white",color = "grey50"),
+        strip.background = element_rect(fill="white",color = "white"),
+        plot.background = element_blank(),
+        axis.line = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_blank(),
+        legend.position="none",
+        legend.title=element_blank(),
+        axis.text = element_blank(),
+        axis.ticks = element_blank())+
+  labs(y="",x="",title="") +
+  facet_grid(allhouse ~ div.gov.cat,scales = "free")
+
+
+ggplot() +
+  geom_text_repel(data = df %>% 
+                    filter(!is.na(div.gov),ifs!="bra",totparties>2) %>%
+                    mutate(
+                      allhouse = case_when(
+                        allhouse == 1 ~ "Majority government",
+                        TRUE ~ "Minority government"),
+                      div.gov.cat = case_when(
+                        abs(div.gov) <= 1 ~ "Congruent",
+                        abs(div.gov) > 1 ~ "Incongruent")
+                    ), 
+                  
+                  aes(x=year,y=div.gov,
+                      label=paste0(ifs,str_sub(year,-2)),
+                      colour=paste(allhouse,div.gov.cat)),
+                  #  family = "Times New Roman") +
+                  family = "Arial",size=3,
+                  fontface = "bold",#position=position_jitter(width=0.5,height=0.5),
+                  segment.alpha=0.3) +
+  
+  #  theme_bw(base_family = "Times", base_size = 11) +
+  theme_bw(base_family = "Arial", base_size = 11) +
+  theme(legend.background = element_blank(),
+        legend.key = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_rect(fill="white"),
+        plot.background = element_blank(),
+        axis.line = element_blank(),
+        panel.grid.major.x = element_line(size = 0.1),
+        panel.grid.major.y = element_line(size = 0.7),
+        panel.grid.minor = element_blank(),
+        legend.position="none",
+        legend.title=element_blank(),
+        axis.ticks = element_blank())+
+  facet_wrap(~ allhouse,ncol=2 ) +
+  annotate("rect", ymin = -2, ymax = 2,xmin=-Inf,xmax=Inf,alpha = .2) +
+  labs(y="Ideological distances",x="",title="")
+
+
+ggplot(data = df %>% 
+         filter(!is.na(div.gov),ifs!="bra",totparties>2) %>%
+         mutate(
+           allhouse.cat = case_when(
+             allhouse == 1 ~ "Majority\n government \n (90-15)",
+             allhouse == 0 & year < 2002 ~ "Minority\n government \n (pre-02)",
+             allhouse == 0 & year >= 2002 ~ "Minority\n government \n(post-02)"),
+           div.gov.cat = case_when(
+             abs(div.gov) <= 1 ~ "Congruent",
+             abs(div.gov) > 1 ~ "Incongruent")
+         )) +
+#  geom_rect(aes(fill=allhouse.cat),xmin = -Inf,xmax = Inf,
+#            ymin = -Inf,ymax = Inf,alpha = .005) +
+  annotate("rect", xmin = -1, xmax = 1,ymin=-Inf,ymax=Inf,alpha = .3) +
+  geom_point(aes(x=div.gov,
+                      y=reorder(paste0(ifs,str_sub(year,-2)),div.gov),
+                      colour=div.gov.cat),
+                  #  family = "Times New Roman") +
+                  family = "Arial",size=3,
+                  fontface = "bold") +
+  
+  scale_color_tableau() +
+#  scale_fill_manual(values = c("#4e79a7","#f28e2b","#f28e2b")) +
+  theme_bw(base_family = "Arial", base_size = 10) +
+  theme(legend.background = element_blank(),
+        legend.key = element_blank(),
+        panel.background = element_blank(),
+        panel.border = element_blank(),
+        strip.background = element_rect(fill="white", color = "white"),
+        
+        plot.background = element_blank(),
+        axis.line = element_blank(),
+        axis.title.x = element_text(size=8),
+        panel.grid.major.x = element_line(size = 0.1),
+        panel.grid.major.y = element_line(size = 0.7),
+        panel.grid.minor = element_blank(),
+        legend.position="none",
+        legend.title=element_blank(),
+        axis.ticks = element_blank())+
+  facet_wrap(~ allhouse.cat,ncol=3 ,scales = "free_y") +
+  
+  
+  geom_vline(xintercept = 0,linetype=2) +
+  labs(x="Ideological differences",y="",title="") 
+
+deytfr# Loading data GARBAGE ---
 load("QoG.RData")
 load("PMDB.RData")
 QoG <- saveLoadReference
